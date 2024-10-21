@@ -2,47 +2,85 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\GameResource;
+use App\Repositories\GameRepository;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class GameController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * GameController constructor.
+     *
+     * @param GameRepository $gameRepository
      */
-    public function index()
+    public function __construct(protected GameRepository $gameRepository)
     {
-        //
+        $this->gameRepository = $gameRepository;
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Get all Games.
+     *
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        //
+        $perPage = $request->query('per_page', 20);
+
+        $games = $this->gameRepository->all($perPage);
+
+        return response()->json(GameResource::collection($games)->response()->getData(true));
     }
 
     /**
-     * Display the specified resource.
+     * Show the details of a game by ID.
+     *
+     * @param int $id
+     * @return JsonResponse
      */
-    public function show(string $id)
+    public function show(int $id): JsonResponse
     {
-        //
+        $game = $this->gameRepository->find($id);
+        return response()->json(new GameResource($game));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Create a new game.
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function update(Request $request, string $id)
+    public function store(Request $request): JsonResponse
     {
-        //
+        $game = $this->gameRepository->create($request->all());
+        return response()->json(new GameResource($game), 201);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Update an existing game by ID.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
      */
-    public function destroy(string $id)
+    public function update(Request $request, int $id): JsonResponse
     {
-        //
+        $game = $this->gameRepository->find($id);
+        $updatedGame = $this->gameRepository->update($game, $request->all());
+        return response()->json(new GameResource($updatedGame));
+    }
+
+    /**
+     * Delete a game by ID.
+     *
+     * @param int $id
+     * @return JsonResponse
+     */
+    public function destroy(int $id): JsonResponse
+    {
+        $game = $this->gameRepository->find($id);
+        $this->gameRepository->delete($game);
+        return response()->json(null, 204);
     }
 }
